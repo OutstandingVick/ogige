@@ -95,11 +95,85 @@ pub fn decode_transaction_bytes(bytes: &[u8]) -> Result<DecodedTransaction, Deco
         (TxVersion::Legacy, read_message_legacy(&mut cursor)?)
     };
 
+    if cursor.remaining() != 0 {
+        return Err(DecodeError::Invalid("trailing transaction bytes"));
+    }
+
+    validate_transaction(sig_count, &message)?;
+
     Ok(DecodedTransaction {
         version,
         signatures,
         message,
     })
+}
+
+fn validate_transaction(signature_count: usize, message: &Message) -> Result<(), DecodeError> {
+    let static_count = message.account_keys.len();
+    let required = usize::from(message.header.num_required_signatures);
+    let readonly_signed = usize::from(message.header.num_readonly_signed_accounts);
+    let readonly_unsigned = usize::from(message.header.num_readonly_unsigned_accounts);
+
+    if required == 0 {
+        return Err(DecodeError::Invalid(
+            "transaction has no fee-payer signature",
+        ));
+    }
+    if signature_count != required {
+        return Err(DecodeError::Invalid(
+            "signature count does not match message header",
+        ));
+    }
+    if required > static_count {
+        return Err(DecodeError::Invalid(
+            "required signatures exceed static account keys",
+        ));
+    }
+    if readonly_signed > required {
+        return Err(DecodeError::Invalid(
+            "readonly signed accounts exceed required signatures",
+        ));
+    }
+    if readonly_unsigned > static_count - required {
+        return Err(DecodeError::Invalid(
+            "readonly unsigned accounts exceed unsigned account keys",
+        ));
+    }
+
+    let loaded_count = message
+        .address_table_lookups
+        .iter()
+        .try_fold(0usize, |total, lookup| {
+            total
+                .checked_add(lookup.writable_indexes.len())
+                .and_then(|n| n.checked_add(lookup.readonly_indexes.len()))
+        })
+        .ok_or(DecodeError::Invalid("loaded account count overflow"))?;
+    let total_count = static_count
+        .checked_add(loaded_count)
+        .ok_or(DecodeError::Invalid("account count overflow"))?;
+    if total_count > usize::from(u8::MAX) + 1 {
+        return Err(DecodeError::Invalid(
+            "transaction has more than 256 accounts",
+        ));
+    }
+
+    for ix in &message.instructions {
+        if usize::from(ix.program_id_index) >= total_count {
+            return Err(DecodeError::Invalid("program id index out of range"));
+        }
+        if ix
+            .accounts
+            .iter()
+            .any(|index| usize::from(*index) >= total_count)
+        {
+            return Err(DecodeError::Invalid(
+                "instruction account index out of range",
+            ));
+        }
+    }
+
+    Ok(())
 }
 
 fn read_message_legacy(cursor: &mut Cursor<'_>) -> Result<Message, DecodeError> {
@@ -242,6 +316,12 @@ impl<'a> Cursor<'a> {
         let mut val: u16 = 0;
         for i in 0..3 {
             let byte = self.read_u8()?;
+            if i == 2 && byte > 0x03 {
+                return Err(DecodeError::Invalid("compact-u16 overflow"));
+            }
+            if i > 0 && byte == 0 {
+                return Err(DecodeError::Invalid("non-canonical compact-u16"));
+            }
             val |= u16::from(byte & 0x7f) << (7 * i);
             if byte & 0x80 == 0 {
                 return Ok(val);
@@ -253,9 +333,7 @@ impl<'a> Cursor<'a> {
 
 impl DecodedTransaction {
     pub fn program_id_for(&self, ix: &CompiledInstruction) -> Option<&Pubkey> {
-        self.message
-            .account_keys
-            .get(ix.program_id_index as usize)
+        self.message.account_keys.get(ix.program_id_index as usize)
     }
 
     pub fn account_at(&self, index: u8) -> Option<&Pubkey> {

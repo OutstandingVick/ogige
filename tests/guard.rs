@@ -3,10 +3,12 @@
 
 use std::collections::HashMap;
 
-use ogige::core::base64;
-use ogige::core::programs::{bpf_upgradeable_loader, system_program, token_program};
-use ogige::core::pubkey::Pubkey;
-use ogige::guard::{analyze, GuardConfig, Verdict};
+use solana_guard::core::base64;
+use solana_guard::core::programs::{
+    bpf_upgradeable_loader, system_program, token_2022_program, token_program,
+};
+use solana_guard::core::pubkey::Pubkey;
+use solana_guard::guard::{analyze, GuardConfig, Verdict};
 
 /// Build a minimal legacy unsigned transaction as base64.
 fn legacy_tx(account_keys: &[Pubkey], instructions: &[(u8, &[u8], &[u8])]) -> String {
@@ -70,10 +72,7 @@ fn token_approve_max_tx() -> String {
     // Approve: disc=4, amount=u64::MAX
     let mut data = vec![4u8];
     data.extend_from_slice(&u64::MAX.to_le_bytes());
-    legacy_tx(
-        &[source, delegate, owner, token],
-        &[(3, &[0, 1, 2], &data)],
-    )
+    legacy_tx(&[source, delegate, owner, token], &[(3, &[0, 1, 2], &data)])
 }
 
 fn system_assign_tx() -> String {
@@ -99,6 +98,39 @@ fn program_upgrade_tx() -> String {
         &[programdata, program, buffer, spill, authority, loader],
         &[(5, &[0, 1, 2, 3, 4], &data)],
     )
+}
+
+fn token_2022_permanent_delegate_tx() -> String {
+    let mint = Pubkey::new([12u8; 32]);
+    let token_2022 = token_2022_program();
+    let mut data = vec![35u8];
+    data.extend_from_slice(&[13u8; 32]);
+    legacy_tx(&[mint, token_2022], &[(1, &[0], &data)])
+}
+
+fn token_2022_transfer_hook_update_tx() -> String {
+    let mint = Pubkey::new([14u8; 32]);
+    let authority = Pubkey::new([15u8; 32]);
+    let token_2022 = token_2022_program();
+    let mut data = vec![36u8, 1u8];
+    data.extend_from_slice(&[16u8; 32]);
+    legacy_tx(&[mint, authority, token_2022], &[(2, &[0, 1], &data)])
+}
+
+fn unknown_program_tx() -> String {
+    let signer = Pubkey::new([17u8; 32]);
+    let unknown_program = Pubkey::new([18u8; 32]);
+    legacy_tx(&[signer, unknown_program], &[(1, &[0], &[99u8])])
+}
+
+fn token_burn_tx() -> String {
+    let account = Pubkey::new([19u8; 32]);
+    let mint = Pubkey::new([20u8; 32]);
+    let owner = Pubkey::new([21u8; 32]);
+    let token = token_program();
+    let mut data = vec![8u8];
+    data.extend_from_slice(&42u64.to_le_bytes());
+    legacy_tx(&[account, mint, owner, token], &[(3, &[0, 1, 2], &data)])
 }
 
 #[test]
@@ -136,11 +168,50 @@ fn rejects_program_upgrade() {
     let cfg = GuardConfig::default();
     let report = analyze(&program_upgrade_tx(), &cfg).expect("decode");
     assert_eq!(report.verdict, Verdict::Reject);
+    assert!(report.findings.iter().any(|f| f.code == "PROGRAM_UPGRADE"));
+    assert!(report.narration.contains("Upgrade"));
+}
+
+#[test]
+fn rejects_token_2022_permanent_delegate() {
+    let report =
+        analyze(&token_2022_permanent_delegate_tx(), &GuardConfig::default()).expect("decode");
+    assert_eq!(report.verdict, Verdict::Reject);
     assert!(report
         .findings
         .iter()
-        .any(|f| f.code == "PROGRAM_UPGRADE"));
-    assert!(report.narration.contains("Upgrade"));
+        .any(|f| f.code == "TOKEN_2022_PERMANENT_DELEGATE"));
+    assert!(report.narration.contains("InitializePermanentDelegate"));
+}
+
+#[test]
+fn holds_token_2022_transfer_hook_update() {
+    let report = analyze(
+        &token_2022_transfer_hook_update_tx(),
+        &GuardConfig::default(),
+    )
+    .expect("decode");
+    assert_eq!(report.verdict, Verdict::Hold);
+    assert!(report
+        .findings
+        .iter()
+        .any(|f| f.code == "TOKEN_2022_TRANSFER_HOOK_UPDATE"));
+    assert!(report.narration.contains("UpdateTransferHook"));
+}
+
+#[test]
+fn holds_unknown_program() {
+    let report = analyze(&unknown_program_tx(), &GuardConfig::default()).expect("decode");
+    assert_eq!(report.verdict, Verdict::Hold);
+    assert!(report.findings.iter().any(|f| f.code == "UNKNOWN_PROGRAM"));
+}
+
+#[test]
+fn holds_token_burn() {
+    let report = analyze(&token_burn_tx(), &GuardConfig::default()).expect("decode");
+    assert_eq!(report.verdict, Verdict::Hold);
+    assert!(report.findings.iter().any(|f| f.code == "TOKEN_BURN"));
+    assert!(report.narration.contains("permanently destroys"));
 }
 
 #[test]
@@ -173,4 +244,23 @@ fn rejects_truncated_payload() {
     // Valid base64 but not a transaction
     let err = analyze(&base64::encode(&[1, 2, 3]), &cfg).unwrap_err();
     assert!(err.contains("truncated") || err.contains("decode") || err.contains("failed"));
+}
+
+#[test]
+fn rejects_signature_count_mismatch() {
+    let tx = sol_transfer_tx();
+    let mut bytes = base64::decode(&tx).expect("base64");
+    // shortvec signature count (1 byte) + one 64-byte signature = header offset 65
+    bytes[65] = 2;
+    let err = analyze(&base64::encode(&bytes), &GuardConfig::default()).unwrap_err();
+    assert!(err.contains("signature count"));
+}
+
+#[test]
+fn rejects_trailing_transaction_bytes() {
+    let tx = sol_transfer_tx();
+    let mut bytes = base64::decode(&tx).expect("base64");
+    bytes.push(0xff);
+    let err = analyze(&base64::encode(&bytes), &GuardConfig::default()).unwrap_err();
+    assert!(err.contains("trailing transaction bytes"));
 }

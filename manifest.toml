@@ -1,9 +1,9 @@
-name = "ogige"
+name = "solana-guard"
 version = "0.1.0"
 description = "Solana transaction safety gate: decode, narrate, and ALLOW/HOLD/REJECT before the agent signs"
-author = "ogige"
-wasm_path = "ogige.wasm"
+author = "OutstandingVick"
+wasm_path = "solana_guard.wasm"
 capabilities = ["tool"]
-# No host permissions yet — pure offline decode + risk classification.
-# Optional http_client can be added later for RPC enrichment / simulation.
-permissions = []
+# Jailed, plugin-local policy configuration only. No network, files, wallet,
+# signing, or broadcasting capabilities.
+permissions = ["config_read"]

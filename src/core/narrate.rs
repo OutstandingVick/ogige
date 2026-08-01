@@ -1,7 +1,7 @@
 //! Human-readable narration of decoded Solana transactions.
 
 use crate::core::programs::{
-    bpf_upgradeable_loader, is_token_family, program_label, system_program,
+    bpf_upgradeable_loader, is_token_family, program_label, system_program, token_2022_program,
 };
 use crate::core::pubkey::Pubkey;
 use crate::core::tx::{CompiledInstruction, DecodedTransaction, TxVersion};
@@ -45,22 +45,15 @@ fn narrate_instruction(tx: &DecodedTransaction, ix: &CompiledInstruction) -> Str
 
     let label = program_label(program).unwrap_or("Unknown program");
     let detail = decode_ix_detail(tx, program, ix);
-    format!(
-        "[{label}] {detail}  (program {})",
-        short_pk(program)
-    )
+    format!("[{label}] {detail}  (program {})", short_pk(program))
 }
 
-fn decode_ix_detail(
-    tx: &DecodedTransaction,
-    program: &Pubkey,
-    ix: &CompiledInstruction,
-) -> String {
+fn decode_ix_detail(tx: &DecodedTransaction, program: &Pubkey, ix: &CompiledInstruction) -> String {
     if *program == system_program() {
         return narrate_system(tx, ix);
     }
     if is_token_family(program) {
-        return narrate_token(tx, ix);
+        return narrate_token(tx, ix, *program == token_2022_program());
     }
     if *program == bpf_upgradeable_loader() {
         return narrate_bpf_loader(ix);
@@ -114,10 +107,7 @@ fn narrate_system(tx: &DecodedTransaction, ix: &CompiledInstruction) -> String {
         11 => {
             let lamports = read_u64_le(ix.data.get(4..12).unwrap_or(&[]));
             match lamports {
-                Some(l) => format!(
-                    "TransferWithSeed {:.9} SOL",
-                    l as f64 / 1_000_000_000.0
-                ),
+                Some(l) => format!("TransferWithSeed {:.9} SOL", l as f64 / 1_000_000_000.0),
                 None => "TransferWithSeed".into(),
             }
         }
@@ -125,7 +115,7 @@ fn narrate_system(tx: &DecodedTransaction, ix: &CompiledInstruction) -> String {
     }
 }
 
-fn narrate_token(tx: &DecodedTransaction, ix: &CompiledInstruction) -> String {
+fn narrate_token(tx: &DecodedTransaction, ix: &CompiledInstruction, is_token_2022: bool) -> String {
     let disc = ix.data.first().copied().unwrap_or(255);
     match disc {
         3 => {
@@ -172,8 +162,10 @@ fn narrate_token(tx: &DecodedTransaction, ix: &CompiledInstruction) -> String {
                 None => "MintTo".into(),
             }
         }
-        8 => "Burn tokens".into(),
+        8 => "Burn tokens — permanently destroys token units".into(),
         9 => "CloseAccount — reclaim rent, destination receives lamports".into(),
+        10 => "FreezeAccount — blocks transfers from a token account".into(),
+        11 => "ThawAccount — restores transfers from a frozen token account".into(),
         12 => {
             let amount = read_u64_le(ix.data.get(1..9).unwrap_or(&[]));
             let decimals = ix.data.get(9).copied();
@@ -188,10 +180,28 @@ fn narrate_token(tx: &DecodedTransaction, ix: &CompiledInstruction) -> String {
         }
         13 => "ApproveChecked".into(),
         14 => "MintToChecked".into(),
-        15 => "BurnChecked".into(),
+        15 => "BurnChecked — permanently destroys token units".into(),
         17 => "SyncNative".into(),
-        18 => "GetAccountDataSize".into(),
-        21 => "TransferFee extension / withdraw withheld (Token-2022)".into(),
+        18 => "InitializeAccount3".into(),
+        21 => "GetAccountDataSize".into(),
+        32 if is_token_2022 => "InitializeNonTransferableMint".into(),
+        35 if is_token_2022 => {
+            let delegate = ix
+                .data
+                .get(1..33)
+                .and_then(|bytes| Pubkey::from_slice(bytes).ok())
+                .map(|pk| short_pk(&pk))
+                .unwrap_or_else(|| "?".into());
+            format!(
+                "InitializePermanentDelegate — {delegate} can transfer or burn any holder's tokens"
+            )
+        }
+        36 if is_token_2022 => match ix.data.get(1).copied() {
+            Some(0) => "InitializeTransferHook — external program runs on every transfer".into(),
+            Some(1) => "UpdateTransferHook — changes the program run on every transfer".into(),
+            Some(subdisc) => format!("TransferHook extension instruction {subdisc}"),
+            None => "TransferHook extension (malformed)".into(),
+        },
         _ => format!("Token instruction discriminant {disc}"),
     }
 }
@@ -211,22 +221,23 @@ fn narrate_bpf_loader(ix: &CompiledInstruction) -> String {
 
 fn narrate_compute_budget(ix: &CompiledInstruction) -> String {
     match ix.data.first().copied() {
-        Some(0) => "RequestHeapFrame".into(),
-        Some(1) => {
+        Some(0) => "RequestUnitsDeprecated".into(),
+        Some(1) => "RequestHeapFrame".into(),
+        Some(2) => {
             let units = read_u32_le(ix.data.get(1..5).unwrap_or(&[]));
             match units {
                 Some(u) => format!("SetComputeUnitLimit {u}"),
                 None => "SetComputeUnitLimit".into(),
             }
         }
-        Some(2) => {
+        Some(3) => {
             let price = read_u64_le(ix.data.get(1..9).unwrap_or(&[]));
             match price {
                 Some(p) => format!("SetComputeUnitPrice {p} µ-lamports"),
                 None => "SetComputeUnitPrice".into(),
             }
         }
-        Some(3) => "SetLoadedAccountsDataSizeLimit".into(),
+        Some(4) => "SetLoadedAccountsDataSizeLimit".into(),
         _ => "Compute budget instruction".into(),
     }
 }

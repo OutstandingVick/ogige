@@ -30,9 +30,9 @@ mod component {
         log_record, LogLevel, PluginAction, PluginEvent, PluginOutcome,
     };
 
-    struct Ogige;
+    struct SolanaGuard;
 
-    const PLUGIN_NAME: &str = "ogige";
+    const PLUGIN_NAME: &str = "solana-guard";
     const PLUGIN_VERSION: &str = env!("CARGO_PKG_VERSION");
     const TOOL_NAME: &str = "solana_guard";
 
@@ -43,7 +43,7 @@ mod component {
         config: HashMap<String, String>,
     }
 
-    impl PluginInfo for Ogige {
+    impl PluginInfo for SolanaGuard {
         fn plugin_name() -> String {
             PLUGIN_NAME.to_string()
         }
@@ -53,7 +53,7 @@ mod component {
         }
     }
 
-    impl Tool for Ogige {
+    impl Tool for SolanaGuard {
         fn name() -> String {
             TOOL_NAME.to_string()
         }
@@ -118,12 +118,7 @@ mod component {
                     })
                 }
                 Err(e) => {
-                    emit(
-                        PluginAction::Fail,
-                        PluginOutcome::Failure,
-                        &e,
-                        None,
-                    );
+                    emit(PluginAction::Fail, PluginOutcome::Failure, &e, None);
                     Ok(ToolResult {
                         success: false,
                         output: String::new(),
@@ -134,19 +129,12 @@ mod component {
         }
     }
 
-    fn emit(
-        action: PluginAction,
-        outcome: PluginOutcome,
-        message: &str,
-        verdict: Option<Verdict>,
-    ) {
-        let attrs = verdict.map(|v| {
-            serde_json::json!({ "verdict": v }).to_string()
-        });
+    fn emit(action: PluginAction, outcome: PluginOutcome, message: &str, verdict: Option<Verdict>) {
+        let attrs = verdict.map(|v| serde_json::json!({ "verdict": v }).to_string());
         log_record(
             LogLevel::Info,
             &PluginEvent {
-                function_name: "ogige::tool::execute".to_string(),
+                function_name: "solana_guard::tool::execute".to_string(),
                 action,
                 outcome: Some(outcome),
                 duration_ms: None,
@@ -156,5 +144,5 @@ mod component {
         );
     }
 
-    export!(Ogige);
+    export!(SolanaGuard);
 }

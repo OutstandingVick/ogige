@@ -1,7 +1,7 @@
 //! Risk classification — danger primitives → findings + severity.
 
 use crate::core::programs::{
-    bpf_upgradeable_loader, is_token_family, program_label, system_program,
+    bpf_upgradeable_loader, is_token_family, program_label, system_program, token_2022_program,
 };
 use crate::core::tx::DecodedTransaction;
 
@@ -30,7 +30,7 @@ pub fn assess(tx: &DecodedTransaction) -> Vec<Finding> {
     if !tx.message.address_table_lookups.is_empty() {
         findings.push(Finding {
             code: "ALT_USED".into(),
-            severity: Severity::Medium,
+            severity: Severity::High,
             instruction_index: 0,
             message: format!(
                 "Transaction uses {} address-lookup table(s); unresolved accounts can hide counterparties",
@@ -53,14 +53,20 @@ pub fn assess(tx: &DecodedTransaction) -> Vec<Finding> {
         if *program == system_program() {
             assess_system(i, ix.data.first().copied(), &mut findings);
         } else if is_token_family(program) {
-            assess_token(i, ix.data.first().copied(), &ix.data, &mut findings);
+            assess_token(
+                i,
+                ix.data.first().copied(),
+                &ix.data,
+                *program == token_2022_program(),
+                &mut findings,
+            );
         } else if *program == bpf_upgradeable_loader() {
             assess_bpf(i, &ix.data, &mut findings);
         } else if program_label(program).is_none() {
             // Unknown program with any writable-looking account list → caution
             findings.push(Finding {
                 code: "UNKNOWN_PROGRAM".into(),
-                severity: Severity::Medium,
+                severity: Severity::High,
                 instruction_index: i,
                 message: format!(
                     "Invokes unrecognized program {} with {} account(s)",
@@ -99,15 +105,21 @@ fn assess_system(i: usize, disc: Option<u8>, findings: &mut Vec<Finding>) {
     }
 }
 
-fn assess_token(i: usize, disc: Option<u8>, data: &[u8], findings: &mut Vec<Finding>) {
+fn assess_token(
+    i: usize,
+    disc: Option<u8>,
+    data: &[u8],
+    is_token_2022: bool,
+    findings: &mut Vec<Finding>,
+) {
     match disc {
         Some(4) | Some(13) => {
             let unlimited = data
                 .get(1..9)
-                .and_then(|b| {
+                .map(|b| {
                     let mut arr = [0u8; 8];
                     arr.copy_from_slice(b);
-                    Some(u64::from_le_bytes(arr))
+                    u64::from_le_bytes(arr)
                 })
                 .is_some_and(|a| a == u64::MAX);
             findings.push(Finding {
@@ -153,11 +165,7 @@ fn assess_token(i: usize, disc: Option<u8>, data: &[u8], findings: &mut Vec<Find
                     Severity::Critical,
                     "SetAuthority AccountOwner — token account ownership change",
                 ),
-                _ => (
-                    "TOKEN_SET_AUTHORITY",
-                    Severity::High,
-                    "Token SetAuthority",
-                ),
+                _ => ("TOKEN_SET_AUTHORITY", Severity::High, "Token SetAuthority"),
             };
             findings.push(Finding {
                 code: code.into(),
@@ -172,11 +180,29 @@ fn assess_token(i: usize, disc: Option<u8>, data: &[u8], findings: &mut Vec<Find
             instruction_index: i,
             message: "MintTo creates new token supply".into(),
         }),
+        Some(8) | Some(15) => findings.push(Finding {
+            code: "TOKEN_BURN".into(),
+            severity: Severity::High,
+            instruction_index: i,
+            message: "Burn permanently destroys token units".into(),
+        }),
         Some(9) => findings.push(Finding {
             code: "TOKEN_CLOSE_ACCOUNT".into(),
             severity: Severity::Medium,
             instruction_index: i,
             message: "CloseAccount — token account closed, lamports sent elsewhere".into(),
+        }),
+        Some(10) => findings.push(Finding {
+            code: "TOKEN_FREEZE_ACCOUNT".into(),
+            severity: Severity::High,
+            instruction_index: i,
+            message: "FreezeAccount blocks transfers from a token account".into(),
+        }),
+        Some(11) => findings.push(Finding {
+            code: "TOKEN_THAW_ACCOUNT".into(),
+            severity: Severity::Medium,
+            instruction_index: i,
+            message: "ThawAccount restores transfers from a frozen token account".into(),
         }),
         Some(3) | Some(12) => findings.push(Finding {
             code: "TOKEN_TRANSFER".into(),
@@ -184,15 +210,50 @@ fn assess_token(i: usize, disc: Option<u8>, data: &[u8], findings: &mut Vec<Find
             instruction_index: i,
             message: "SPL token transfer".into(),
         }),
+        Some(32) if is_token_2022 => findings.push(Finding {
+            code: "TOKEN_2022_NON_TRANSFERABLE".into(),
+            severity: Severity::Medium,
+            instruction_index: i,
+            message: "Token-2022 mint is being made non-transferable".into(),
+        }),
+        Some(35) if is_token_2022 => findings.push(Finding {
+            code: "TOKEN_2022_PERMANENT_DELEGATE".into(),
+            severity: Severity::Critical,
+            instruction_index: i,
+            message: "Permanent delegate can transfer or burn tokens from any holder account"
+                .into(),
+        }),
+        Some(36) if is_token_2022 => {
+            let (code, message) = match data.get(1).copied() {
+                Some(0) => (
+                    "TOKEN_2022_TRANSFER_HOOK_INIT",
+                    "Transfer hook adds an external program call to every token transfer",
+                ),
+                Some(1) => (
+                    "TOKEN_2022_TRANSFER_HOOK_UPDATE",
+                    "Transfer hook program is being changed",
+                ),
+                _ => (
+                    "TOKEN_2022_TRANSFER_HOOK",
+                    "Token-2022 transfer-hook instruction requires review",
+                ),
+            };
+            findings.push(Finding {
+                code: code.into(),
+                severity: Severity::High,
+                instruction_index: i,
+                message: message.into(),
+            });
+        }
         _ => {}
     }
 }
 
 fn assess_bpf(i: usize, data: &[u8], findings: &mut Vec<Finding>) {
-    let disc = data.get(..4).and_then(|b| {
+    let disc = data.get(..4).map(|b| {
         let mut arr = [0u8; 4];
         arr.copy_from_slice(b);
-        Some(u32::from_le_bytes(arr))
+        u32::from_le_bytes(arr)
     });
     match disc {
         Some(3) => findings.push(Finding {

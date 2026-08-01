@@ -11,4 +11,4 @@ pub mod tx;
 
 pub use narrate::narrate_transaction;
 pub use risk::{assess, Finding, Severity};
-pub use tx::{DecodedTransaction, DecodeError};
+pub use tx::{DecodeError, DecodedTransaction};

@@ -1,4 +1,4 @@
-# ogige
+# ogige — Solana Guard
 
 ZeroClaw **WIT tool plugin** — a Solana transaction safety gate for autonomous agents.
 
@@ -20,7 +20,7 @@ Agents that can touch Solana need a brake pedal. `ogige` is that brake: decode �
 
 | | |
 |---|---|
-| Plugin name | `ogige` |
+| Plugin name | `solana-guard` |
 | Tool name | `solana_guard` |
 | Input | `{ "transaction": "<base64>" }` |
 | Output | JSON `GuardReport` (verdict, summary, narration, findings, …) |
@@ -51,14 +51,18 @@ Agents that can touch Solana need a brake pedal. `ogige` is that brake: decode �
 | `TOKEN_APPROVE_MAX` | CRITICAL | SPL Approve with `u64::MAX` |
 | `MINT_AUTHORITY_CHANGE` / `FREEZE_AUTHORITY_CHANGE` / `TOKEN_OWNER_CHANGE` | CRITICAL | Token SetAuthority |
 | `PROGRAM_UPGRADE` / `UPGRADE_AUTHORITY_CHANGE` | CRITICAL | BPF Upgradeable Loader |
+| `TOKEN_2022_PERMANENT_DELEGATE` | CRITICAL | Delegate can transfer or burn from any holder account |
+| `TOKEN_2022_TRANSFER_HOOK_INIT` / `TOKEN_2022_TRANSFER_HOOK_UPDATE` | HIGH | External program runs on every transfer |
+| `TOKEN_2022_NON_TRANSFERABLE` | MEDIUM | Mint is made non-transferable |
 | `NONCE_AUTHORIZE` | HIGH | Durable nonce authority change |
 | `TOKEN_APPROVE` / `TOKEN_MINT_TO` | HIGH | Delegates / minting |
-| `ALT_USED` / `UNKNOWN_PROGRAM` | MEDIUM | Hidden accounts / unrecognized programs |
+| `TOKEN_BURN` / `TOKEN_FREEZE_ACCOUNT` | HIGH | Destruction / account freeze |
+| `ALT_USED` / `UNKNOWN_PROGRAM` | HIGH | Unresolved accounts / unrecognized behavior default to HOLD |
 | `SOL_TRANSFER` / `TOKEN_TRANSFER` | LOW | Normal transfers (ALLOW by default) |
 
 ## Config keys
 
-Injected via the plugin's jailed `__config` section when `config_read` is granted (not required today — defaults are fail-closed):
+Injected via the plugin's jailed `__config` section under its sole `config_read` permission. The plugin cannot read global or other plugin configuration:
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -83,13 +87,33 @@ manifest.toml
 cargo test
 rustup target add wasm32-wasip2
 cargo build --target wasm32-wasip2 --release
-cp target/wasm32-wasip2/release/ogige.wasm ogige.wasm
+cp target/wasm32-wasip2/release/solana_guard.wasm solana_guard.wasm
 ```
+
+## Install
+
+Once published in the ZeroClaw registry:
+
+```bash
+zeroclaw plugin install solana-guard
+```
+
+For local development, place `solana_guard.wasm` beside `manifest.toml` in the
+configured plugin directory and enable plugins in ZeroClaw.
+
+## Security boundary
+
+- Offline and deterministic: no RPC, files, wallet, signing, or broadcast access.
+- Invalid, non-canonical, truncated, or trailing transaction bytes fail analysis.
+- Address lookup tables and unknown programs default to `HOLD` because their
+  accounts or behavior cannot be fully resolved offline.
+- A verdict is a pre-signing policy signal, not proof of runtime behavior. CPI,
+  account state, and balance deltas require simulation or RPC enrichment.
 
 ## Roadmap
 
 - [ ] Optional RPC enrichment (`simulateTransaction`, mint/authority lookups) behind `http_client`
-- [ ] Token-2022 transfer-hook / permanent-delegate detection
+- [x] Token-2022 transfer-hook / permanent-delegate detection
 - [ ] Squads / multisig CPI surface narration
 - [ ] Fixture corpus from real exploit txs
 

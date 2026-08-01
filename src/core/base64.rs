@@ -1,7 +1,6 @@
 //! Hand-rolled Base64 (standard alphabet) — no external deps.
 
-const ALPHABET: &[u8; 64] =
-    b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 fn decode_char(c: u8) -> Result<u8, String> {
     match c {
@@ -16,10 +15,7 @@ fn decode_char(c: u8) -> Result<u8, String> {
 
 /// Decode a standard Base64 string (padding optional).
 pub fn decode(input: &str) -> Result<Vec<u8>, String> {
-    let cleaned: Vec<u8> = input
-        .bytes()
-        .filter(|b| !b.is_ascii_whitespace())
-        .collect();
+    let cleaned: Vec<u8> = input.bytes().filter(|b| !b.is_ascii_whitespace()).collect();
 
     if cleaned.is_empty() {
         return Ok(Vec::new());
@@ -27,7 +23,7 @@ pub fn decode(input: &str) -> Result<Vec<u8>, String> {
 
     let pad = cleaned.iter().rev().take_while(|&&c| c == b'=').count();
     let len = cleaned.len();
-    if len % 4 != 0 {
+    if !len.is_multiple_of(4) {
         return Err("invalid base64 length".into());
     }
 
@@ -64,7 +60,7 @@ pub fn decode(input: &str) -> Result<Vec<u8>, String> {
 
 /// Encode raw bytes as standard Base64 (with padding).
 pub fn encode(data: &[u8]) -> String {
-    let mut out = String::with_capacity((data.len() + 2) / 3 * 4);
+    let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
     for chunk in data.chunks(3) {
         let b0 = chunk[0] as u32;
         let b1 = chunk.get(1).copied().unwrap_or(0) as u32;
