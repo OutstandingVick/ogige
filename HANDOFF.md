@@ -3,8 +3,37 @@
 **Date:** 2026-08-01  
 **Repo:** https://github.com/OutstandingVick/ogige  
 **Local path:** `/Users/macbook/macbook/ogige`  
-**Status:** Scaffold complete, host tests green, `wasm32-wasip2` release build succeeds, pushed to GitHub `main`.  
+**Status:** Registry-ready hardening complete; draft upstream PR open; host tests, strict clippy, metadata validation, and `wasm32-wasip2` release build pass.  
 **Author of this work:** prior Cursor agent (Grok) — session ending due to user monthly usage limit.
+
+## Continuation update — 2026-08-01
+
+Codex continued the handoff and completed the first submission milestone:
+
+- Renamed the registry identity from branded `ogige` to descriptive
+  `solana-guard`; the tool remains `solana_guard` and ogige remains the project
+  brand/repository.
+- Opened draft upstream PR:
+  https://github.com/zeroclaw-labs/zeroclaw-plugins/pull/151
+- Fork branch: `OutstandingVick/zeroclaw-plugins:feat/solana-guard`
+- Upstream submission commit: `4c14b11`
+- Canonical ogige hardening commit: `d17b883`
+- Added strict transaction structural validation: canonical shortvec encoding,
+  signature/header agreement, header/account bounds, instruction index bounds,
+  256-account cap, and rejection of trailing bytes.
+- Added Token-2022 permanent-delegate, transfer-hook, and non-transferable-mint
+  analysis; added token burn/freeze/thaw handling; fixed Compute Budget and token
+  instruction narration.
+- Changed unknown programs and unresolved address lookup tables to HIGH/HOLD by
+  default, preserving the fail-closed promise.
+- Manifest now requests only jailed `config_read`; there is still no network,
+  filesystem, wallet, signing, or broadcasting capability.
+- Current verification: 4 unit + 14 integration tests pass, strict clippy passes,
+  `wasm32-wasip2` release build passes, and upstream registry metadata reports
+  `solana-guard@0.1.0` as valid pending unpublished source.
+
+Next priority is to watch/respond to PR #151 CI and maintainer feedback, then
+produce the demo video and add provenance-backed real transaction fixtures.
 
 This document is the single source of truth for continuing the Superteam Brasil × ZeroClaw bounty submission.
 
