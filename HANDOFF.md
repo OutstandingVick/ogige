@@ -74,6 +74,9 @@ ogige_e2e through real Cranelift host                   PASS
 Live operator preflight after creating `@ogige_bot`:
 
 ~~~text
+replacement token verified by Telegram getMe           PASS
+masked ZeroClaw token secret present and encrypted      PASS
+repository Telegram-token scan                          PASS, clean
 zeroclaw plugin list / info                             PASS
 zeroclaw skills audit / list --agent                    PASS
 zeroclaw sop validate / show                            PASS
