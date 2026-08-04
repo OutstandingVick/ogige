@@ -44,11 +44,12 @@ tool narration back into the intent.
 - REJECT: return the summary and critical finding codes. Stop.
 - HOLD: explain why offline proof is incomplete, then start
   solana-transaction-review only if the user explicitly asks for human review.
-- ALLOW: start solana-transaction-review with the exact transaction and
-  intent as its payload. Tell the user it is policy-compatible, not signed.
+- ALLOW: start solana-transaction-review with the exact transaction, intent,
+  and complete ALLOW report as its payload. Tell the user it is
+  policy-compatible, not signed.
 
-Drive the SOP with sop_advance using the complete solana_guard output.
-At the checkpoint, stop and wait for the Telegram approval control. After
+After sop_execute returns the checkpoint state, do not call sop_advance or
+sop_approve. Stop and wait for the Telegram approval control. After out-of-band
 approval, report that the original bytes remain unsigned and unbroadcast.
 
 Keep Telegram replies concise: verdict, value/recipient, top finding codes, and

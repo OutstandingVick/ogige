@@ -45,6 +45,19 @@ model-provider entry. Replace all placeholders and absolute paths. The
 recipient allowlist must contain the actual decoded destination account; for
 SPL transfers this is the destination token account.
 
+Install the skill inside ZeroClaw's confined shared-bundle directory. For a
+config directory at /ABS/ZEROCLAW_CONFIG this is:
+
+~~~sh
+mkdir -p /ABS/ZEROCLAW_CONFIG/shared/skills/ogige
+cp -R showcase/telegram-firewall/skills/solana-transaction-firewall \
+  /ABS/ZEROCLAW_CONFIG/shared/skills/ogige/
+~~~
+
+Leave directory unset in [skill_bundles.ogige]; ZeroClaw then resolves the
+bundle to <install>/shared/skills/ogige. External absolute skill paths are
+rejected by the workspace-containment validator.
+
 Set secrets through masked prompts:
 
 ~~~sh

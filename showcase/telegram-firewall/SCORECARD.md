@@ -3,15 +3,15 @@
 This is a conservative self-score against the supplied 100-point rubric, not a
 claim about judge results.
 
-## Current repository, before live Telegram recording: 72/100
+## Current repository, before live Telegram recording: 76/100
 
 | Category | Score | Evidence / deduction |
 |---|---:|---|
-| Use case | 17/30 | Complete workflow and real ZeroClaw host execution, but no recorded real-channel run yet |
+| Use case | 20/30 | Real model-driven ZeroClaw ALLOW and adversarial REJECT turns plus host execution, but no recorded Telegram run yet |
 | Safety | 23/25 | Rust-enforced intent + policy, minimal WASM grant, narrow risk profile, external-only durable checkpoint, injection regression |
 | Craft | 17/20 | Strict tests, compact output, source host E2E; offline decoder cannot resolve state/CPI/ALTs |
 | Reproducibility | 13/15 | Pinned host/toolchain, config, skill, SOP, fixture generator, exact commands; live credentials necessarily absent |
-| Showcase | 2/10 | Draft post and video script exist, but no final video or Discord post |
+| Showcase | 3/10 | Reproducible CLI evidence, draft post, and video script exist, but no final channel video or Discord post |
 
 Eligibility remains pending until the real channel showcase is recorded and
 posted. A technically strong repository alone is not a valid final submission.

@@ -1,8 +1,8 @@
 [sop]
 name = "solana-transaction-review"
-description = "Re-check an unsigned Solana transaction and park it at a durable human approval checkpoint"
+description = "Park a policy-approved unsigned Solana transaction at a durable human checkpoint"
 version = "0.2.0"
-execution_mode = "supervised"
+execution_mode = "auto"
 max_concurrent = 1
 admission_policy = "hold"
 max_pending_approvals = 8

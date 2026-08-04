@@ -44,6 +44,9 @@ https://github.com/zeroclaw-labs/zeroclaw-plugins/pull/151 was closed on
 - Threat model, injection test, submission draft, and three-minute video script.
 - Reproducible runbook pinned to ZeroClaw commit
   707e0870df3988ab80a46759c50fae680ca3ccd9 and Rust 1.96.0.
+- Real model-driven ZeroClaw turns using the existing Codex subscription:
+  ALLOW persisted at the explicit checkpoint; hostile over-cap REJECT created
+  no SOP run.
 
 ## Verification evidence
 
@@ -73,6 +76,11 @@ fully bound 1 SOL fixture, then returned REJECT with SOL_CAP_EXCEEDED for the
 same bytes plus hostile self-approval/broadcast prose under a 0.1 SOL operator
 cap.
 
+The full agent loop was then exercised with the installed skill and pinned
+host. Its ALLOW run persisted the exact bytes, intent, and tool report with
+status waiting_approval/current_step 1. The hostile REJECT run stopped with
+SOL_CAP_EXCEEDED and the isolated SOP store contained zero runs.
+
 ## What is still required
 
 Two operator-owned credentials are intentionally not in the repository:
@@ -100,6 +108,7 @@ Do not reopen a registry PR during the bounty.
 - showcase/telegram-firewall/sops/... — durable workflow
 - showcase/telegram-firewall/THREAT_MODEL.md — security boundary
 - showcase/telegram-firewall/PROMPT_INJECTION_TEST.md — adversarial case
+- showcase/telegram-firewall/EVIDENCE.md — real host and agent-loop evidence
 - showcase/telegram-firewall/host-tests/ogige_e2e.rs — real host proof
 - showcase/telegram-firewall/SUBMISSION.md — Discord post draft
 - showcase/telegram-firewall/VIDEO_SCRIPT.md — recording plan
