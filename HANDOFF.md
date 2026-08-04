@@ -77,6 +77,7 @@ Live operator preflight after creating `@ogige_bot`:
 replacement token verified by Telegram getMe           PASS
 masked ZeroClaw token secret present and encrypted      PASS
 repository Telegram-token scan                          PASS, clean
+local Telegram peer allowlist                           PASS, one numeric peer
 zeroclaw plugin list / info                             PASS
 zeroclaw skills audit / list --agent                    PASS
 zeroclaw sop validate / show                            PASS
@@ -106,8 +107,8 @@ already driven the validation turns described above.
 
 Remaining operator and submission work:
 
-1. complete the Telegram peer allowlist, enable the channel, and make
-   `zeroclaw channel doctor` recognize it;
+1. enable the Telegram channel and make `zeroclaw channel doctor` recognize
+   it;
 2. start the daemon and perform ALLOW/checkpoint, REJECT, and injection flows;
 3. record and trim the video to under three minutes;
 4. add the final video URL to SUBMISSION.md;
