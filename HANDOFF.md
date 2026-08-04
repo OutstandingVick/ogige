@@ -82,8 +82,7 @@ zeroclaw plugin list / info                             PASS
 zeroclaw skills audit / list --agent                    PASS
 zeroclaw sop validate / show                            PASS
 zeroclaw security status --agent solana_firewall       PASS, no warnings
-zeroclaw channel doctor                                NOT READY
-                                                        no real-time channel detected
+zeroclaw channel doctor                                PASS, Telegram healthy
 ~~~
 
 The host E2E test loaded the real WASM, read its metadata, returned ALLOW for a
@@ -107,12 +106,10 @@ already driven the validation turns described above.
 
 Remaining operator and submission work:
 
-1. enable the Telegram channel and make `zeroclaw channel doctor` recognize
-   it;
-2. start the daemon and perform ALLOW/checkpoint, REJECT, and injection flows;
-3. record and trim the video to under three minutes;
-4. add the final video URL to SUBMISSION.md;
-5. post the showcase in the bounty-designated Discord channel.
+1. start the daemon and perform ALLOW/checkpoint, REJECT, and injection flows;
+2. record and trim the video to under three minutes;
+3. add the final video URL to SUBMISSION.md;
+4. post the showcase in the bounty-designated Discord channel.
 
 Do not reopen a registry PR during the bounty.
 
