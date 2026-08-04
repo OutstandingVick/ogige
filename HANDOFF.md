@@ -96,19 +96,19 @@ SOL_CAP_EXCEEDED and the isolated SOP store contained zero runs.
 
 The Telegram bot `@ogige_bot` now exists, and its token is stored in the
 operator's local ZeroClaw config through the masked config prompt. The token is
-not in this repository. The working model-provider profile is also configured
-locally and has already driven the validation turns described above.
+not in this repository. The token was rotated after setup, the replacement was
+verified against Telegram's `getMe` endpoint, and the masked local secret was
+updated. The working model-provider profile is also configured locally and has
+already driven the validation turns described above.
 
 Remaining operator and submission work:
 
-1. rotate the Telegram token before the live demo and update the local masked
-   secret;
-2. complete the Telegram peer allowlist, enable the channel, and make
+1. complete the Telegram peer allowlist, enable the channel, and make
    `zeroclaw channel doctor` recognize it;
-3. start the daemon and perform ALLOW/checkpoint, REJECT, and injection flows;
-4. record and trim the video to under three minutes;
-5. add the final video URL to SUBMISSION.md;
-6. post the showcase in the bounty-designated Discord channel.
+2. start the daemon and perform ALLOW/checkpoint, REJECT, and injection flows;
+3. record and trim the video to under three minutes;
+4. add the final video URL to SUBMISSION.md;
+5. post the showcase in the bounty-designated Discord channel.
 
 Do not reopen a registry PR during the bounty.
 
