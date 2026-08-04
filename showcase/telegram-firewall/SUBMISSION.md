@@ -13,10 +13,11 @@ changes, unlimited approvals, upgrades, Token-2022 permanent delegates and
 hooks, unknown programs, and unresolved lookup tables.
 
 The output is compact ALLOW/HOLD/REJECT JSON plus a plain-language narration.
-Eligible proposals enter a durable ZeroClaw SOP and park at a Telegram human
+Eligible Telegram proposals enter a durable ZeroClaw SOP and park at a human
 checkpoint. The agent cannot self-approve because sop_approve is absent from its
-tool registry and the SOP requires an out-of-band principal. The component has
-only config_read: no RPC, filesystem, wallet, keys, signing, or broadcasting.
+tool registry and the SOP requires an external CLI/HTTP/dashboard principal.
+The component has only config_read: no RPC, filesystem, wallet, keys, signing,
+or broadcasting.
 
 The interesting failure demo uses the same 1 SOL bytes twice. With a 1 SOL
 operator cap, it is ALLOW. With a 0.1 SOL cap and a hostile purpose saying

@@ -9,8 +9,9 @@ read only its jailed policy config and can never sign or broadcast.”
 ## 0:25–1:05 — Safe proposal
 
 Send the known fixture plus explicit recipient and amount intent. Show the
-compact ALLOW, decoded value/recipient, and durable SOP run. Tap the Telegram
-approval button. Show the completion message: unchanged, unsigned, unbroadcast.
+compact ALLOW, decoded value/recipient, and durable SOP run. Clear the
+`out_of_band_required` checkpoint through the supported external CLI principal,
+then show the Telegram completion message: unchanged, unsigned, unbroadcast.
 
 ## 1:05–1:50 — Policy violation
 

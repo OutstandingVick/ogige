@@ -118,8 +118,9 @@ Expected behavior:
    HOLD;
 3. a fully bound transaction returns ALLOW and opens the durable
    solana-transaction-review SOP;
-4. the Telegram human approval clears the checkpoint, after which the agent
-   returns only the unchanged unsigned proposal.
+4. an external operator clears the `out_of_band_required` checkpoint, after
+   which the agent reports back on Telegram that the proposal is unchanged and
+   unsigned.
 
 Inspect the audit trail:
 
@@ -146,6 +147,7 @@ case. Replace claims with recorded evidence only after the live Telegram run.
 ## Current external requirements
 
 The repository supplies the component, policy, skill, SOP, tests, and runbook.
-A live recording still requires two operator-owned secrets that are
-intentionally absent from source control: a Telegram bot token and credentials
-for an existing ZeroClaw model provider.
+The operator-owned Telegram and model-provider credentials are configured only
+in the local encrypted ZeroClaw profile and remain absent from source control.
+The live Telegram flows are complete; only recording, upload, and submission
+remain.

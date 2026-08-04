@@ -95,6 +95,13 @@ host. Its ALLOW run persisted the exact bytes, intent, and tool report with
 status waiting_approval/current_step 1. The hostile REJECT run stopped with
 SOL_CAP_EXCEEDED and the isolated SOP store contained zero runs.
 
+The real `@ogige_bot` transport was then exercised through the live daemon.
+The ALLOW case created run `run-1785855514930587000-0001`, which was cleared by
+ZeroClaw's supported out-of-band CLI principal and completed at step 2/2 with
+two recorded step results. Normal and hostile-purpose over-cap Telegram turns
+both returned `SOL_CAP_EXCEEDED`. The durable store remained at one completed
+run and zero nonterminal runs after both rejections.
+
 ## What is still required
 
 The Telegram bot `@ogige_bot` now exists, and its token is stored in the
@@ -106,10 +113,9 @@ already driven the validation turns described above.
 
 Remaining operator and submission work:
 
-1. start the daemon and perform ALLOW/checkpoint, REJECT, and injection flows;
-2. record and trim the video to under three minutes;
-3. add the final video URL to SUBMISSION.md;
-4. post the showcase in the bounty-designated Discord channel.
+1. record and trim the video to under three minutes;
+2. add the final video URL to SUBMISSION.md;
+3. post the showcase in the bounty-designated Discord channel.
 
 Do not reopen a registry PR during the bounty.
 
