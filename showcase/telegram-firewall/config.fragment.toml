@@ -20,6 +20,11 @@ max_token_amount = "1000000"
 # Comma-separated full base58 addresses. Token recipients are token accounts.
 allowed_recipients = "<RECIPIENT_ACCOUNT_1>,<RECIPIENT_ACCOUNT_2>"
 allowed_mints = "<MINT_ACCOUNT_1>"
+# Optional offline-signing profile. If enabled, all accepted transactions must
+# bind the advance instruction, nonce account, authority, and nonce value.
+require_durable_nonce = "false"
+# allowed_nonce_accounts = "<NONCE_ACCOUNT_1>"
+# allowed_nonce_authorities = "<NONCE_AUTHORITY_1>"
 reject_on_critical = "true"
 hold_on_high = "true"
 hold_on_medium = "true"

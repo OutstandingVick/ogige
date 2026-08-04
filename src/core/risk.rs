@@ -51,7 +51,7 @@ pub fn assess(tx: &DecodedTransaction) -> Vec<Finding> {
         };
 
         if *program == system_program() {
-            assess_system(i, ix.data.first().copied(), &mut findings);
+            assess_system(i, read_u32(&ix.data), &mut findings);
         } else if is_token_family(program) {
             assess_token(
                 i,
@@ -81,7 +81,7 @@ pub fn assess(tx: &DecodedTransaction) -> Vec<Finding> {
     findings
 }
 
-fn assess_system(i: usize, disc: Option<u8>, findings: &mut Vec<Finding>) {
+fn assess_system(i: usize, disc: Option<u32>, findings: &mut Vec<Finding>) {
     match disc {
         Some(1) | Some(10) => findings.push(Finding {
             code: "SYSTEM_ASSIGN".into(),
@@ -95,6 +95,12 @@ fn assess_system(i: usize, disc: Option<u8>, findings: &mut Vec<Finding>) {
             instruction_index: i,
             message: "AuthorizeNonceAccount changes durable-nonce authority".into(),
         }),
+        Some(4) => findings.push(Finding {
+            code: "DURABLE_NONCE_ADVANCE".into(),
+            severity: Severity::Info,
+            instruction_index: i,
+            message: "Advances a durable nonce; account, authority, position, and nonce value must be policy-bound".into(),
+        }),
         Some(2) | Some(11) => findings.push(Finding {
             code: "SOL_TRANSFER".into(),
             severity: Severity::Low,
@@ -103,6 +109,10 @@ fn assess_system(i: usize, disc: Option<u8>, findings: &mut Vec<Finding>) {
         }),
         _ => {}
     }
+}
+
+fn read_u32(data: &[u8]) -> Option<u32> {
+    Some(u32::from_le_bytes(data.get(..4)?.try_into().ok()?))
 }
 
 fn assess_token(

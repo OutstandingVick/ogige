@@ -99,6 +99,18 @@ mod component {
                                 "type": "integer",
                                 "minimum": 0,
                                 "description": "Maximum raw token units authorized by this request."
+                            },
+                            "expected_nonce_account": {
+                                "type": ["string", "null"],
+                                "description": "Full base58 durable nonce account expected at instruction 0; null for ordinary transactions."
+                            },
+                            "expected_nonce_authority": {
+                                "type": ["string", "null"],
+                                "description": "Full base58 signer authorized to advance the nonce; null for ordinary transactions."
+                            },
+                            "expected_nonce_value": {
+                                "type": ["string", "null"],
+                                "description": "Full base58 current nonce value expected as the message blockhash; null for ordinary transactions."
                             }
                         },
                         "required": ["description", "expected_recipient", "max_lamports", "max_token_amount"],

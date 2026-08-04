@@ -1,0 +1,47 @@
+#!/bin/sh
+set -eu
+
+usage() {
+  echo "usage: ogige-approve RUN_ID [--config-dir DIR]" >&2
+  exit 2
+}
+
+[ "$#" -ge 1 ] || usage
+run_id=$1
+shift
+
+printf '%s\n' "$run_id" | grep -Eq '^run-[0-9]+-[0-9]+$' || {
+  echo "refusing invalid SOP run id" >&2
+  exit 2
+}
+
+config_args=""
+if [ "$#" -gt 0 ]; then
+  [ "$#" -eq 2 ] && [ "$1" = "--config-dir" ] || usage
+  config_args="--config-dir $2"
+fi
+
+command -v zeroclaw >/dev/null 2>&1 || {
+  echo "zeroclaw is not installed" >&2
+  exit 127
+}
+
+# Run IDs are strictly validated above. `set --` keeps arguments separated and
+# prevents shell interpretation of configuration paths.
+set --
+if [ -n "$config_args" ]; then
+  set -- --config-dir "${config_args#--config-dir }"
+fi
+
+pending=$(zeroclaw "$@" sop pending)
+printf '%s\n' "$pending" | grep -F "$run_id" >/dev/null || {
+  echo "run is not currently waiting for approval: $run_id" >&2
+  exit 1
+}
+
+zeroclaw "$@" sop approve "$run_id"
+
+# Approval changes only the durable checkpoint. A fresh, narrowly-scoped agent
+# turn advances exactly that approved run and reports its terminal state.
+zeroclaw "$@" agent --agent solana_firewall --message \
+  "Out-of-band operator approval is complete for SOP run $run_id. Call sop_status for exactly this run, then sop_advance only if it is approved and ready. Do not sign, modify, simulate, or broadcast anything. Return the terminal run status and confirm the bytes remain unsigned and unbroadcast."

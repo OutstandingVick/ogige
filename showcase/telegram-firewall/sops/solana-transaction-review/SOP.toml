@@ -1,7 +1,7 @@
 [sop]
 name = "solana-transaction-review"
 description = "Park a policy-approved unsigned Solana transaction at a durable human checkpoint"
-version = "0.2.0"
+version = "0.3.0"
 execution_mode = "auto"
 max_concurrent = 1
 admission_policy = "hold"

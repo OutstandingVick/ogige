@@ -33,9 +33,16 @@ https://github.com/zeroclaw-labs/zeroclaw-plugins/pull/151 was closed on
 - Existing dangerous instruction taxonomy retained and expanded into the
   policy verdict.
 - Compact tool output and required structured intent schema.
-- 4 unit tests and 20 integration tests, including hostile-purpose invariance.
+- 4 unit tests and 27 integration/property tests, including hostile-purpose
+  invariance and official-SDK differential decoding.
 - ZeroClaw WIT v0 logging contract synced to pinned upstream.
-- Version bumped to 0.2.0.
+- Version bumped to 0.3.0.
+- Official modular Solana SDK ordinary and durable-nonce fixtures with pinned
+  crate provenance and reproducible generation.
+- Durable nonce position/account/signer/value binding plus exact-byte SHA-256.
+- Strict pending-run approval/resume bridge, routine JSON review command, and
+  optional bounded advisory-only RPC enrichment.
+- GitHub Actions plus one-command install and full verification workflows.
 - Deterministic non-broadcastable fixture generator and checked-in fixture.
 - Telegram skill with explicit untrusted-data and no-self-approval rules.
 - Durable supervised SOP with a human checkpoint.
@@ -53,7 +60,7 @@ https://github.com/zeroclaw-labs/zeroclaw-plugins/pull/151 was closed on
 Local component:
 
 ~~~text
-cargo test                                      PASS (4 + 20)
+cargo test                                      PASS (4 + 27)
 cargo clippy --all-targets -- -D warnings       PASS
 cargo build --target wasm32-wasip2 --release   PASS
 git diff --check                                PASS

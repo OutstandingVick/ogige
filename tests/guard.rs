@@ -78,6 +78,9 @@ fn sol_intent(recipient: Pubkey, max_lamports: u64) -> GuardIntent {
         expected_mint: None,
         max_lamports,
         max_token_amount: 0,
+        expected_nonce_account: None,
+        expected_nonce_authority: None,
+        expected_nonce_value: None,
     }
 }
 
@@ -226,6 +229,9 @@ fn allows_checked_token_transfer_matching_policy() {
         expected_mint: Some(mint.to_base58()),
         max_lamports: 0,
         max_token_amount: 500,
+        expected_nonce_account: None,
+        expected_nonce_authority: None,
+        expected_nonce_value: None,
     };
     let report =
         analyze_with_intent(&token_transfer_checked_tx(), &cfg, Some(&intent)).expect("decode");

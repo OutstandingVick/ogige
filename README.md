@@ -33,13 +33,17 @@ The tool input is:
     "expected_recipient": "<full base58 account>",
     "expected_mint": null,
     "max_lamports": 100000000,
-    "max_token_amount": 0
+    "max_token_amount": 0,
+    "expected_nonce_account": null,
+    "expected_nonce_authority": null,
+    "expected_nonce_value": null
   }
 }
 ~~~
 
 The compact JSON output includes the verdict, narration, findings,
-intent_bound, policy_configured, transaction version, and structural counts.
+intent_bound, policy_configured, durable-nonce binding state, a SHA-256 identity
+for the exact serialized bytes, transaction version, and structural counts.
 
 ## Operator policy
 
@@ -52,6 +56,9 @@ permission:
 | max_token_amount | 0 | Absolute raw token-unit cap; zero denies token movement |
 | allowed_recipients | empty | Comma-separated full base58 destination accounts |
 | allowed_mints | empty | Comma-separated full base58 checked-transfer mints |
+| require_durable_nonce | false | Require a valid advance instruction at index 0 |
+| allowed_nonce_accounts | empty | Operator-approved durable nonce accounts |
+| allowed_nonce_authorities | empty | Operator-approved nonce signer authorities |
 | reject_on_critical | true | Critical finding produces REJECT |
 | hold_on_high | true | High finding produces HOLD |
 | hold_on_medium | false | Optionally require review for medium findings |
@@ -63,6 +70,7 @@ Invalid integers or pubkeys produce POLICY_CONFIG_INVALID at CRITICAL severity.
 In addition to policy violations, the analyzer detects:
 
 - System Assign/AssignWithSeed and durable nonce authority changes;
+- misplaced/multiple nonce advances and nonce account/authority/value mismatch;
 - unlimited or ordinary token delegate approvals;
 - mint, freeze, token-owner, and program-upgrade authority changes;
 - BPF program upgrades;
@@ -78,15 +86,14 @@ transaction bytes fail decoding.
 
 ~~~sh
 rustup target add wasm32-wasip2
-cargo test
-cargo clippy --all-targets -- -D warnings
-cargo build --target wasm32-wasip2 --release
-cargo run --quiet --example generate_demo_fixture
+make verify
 ~~~
 
-Current local suite: 4 unit tests and 20 integration tests. The WASM component
-has also passed the included end-to-end test through ZeroClaw 0.8.4's real
-Wasmtime/Cranelift host.
+Current local suite includes unit/integration policy tests, official-Solana-SDK
+differential fixtures, and property tests over arbitrary/trailing wire bytes.
+CI reproduces the fixtures, runs clippy, and builds the WASM component. The
+component has also passed the included end-to-end test through ZeroClaw 0.8.4's
+real Wasmtime/Cranelift host.
 
 ## Repository layout
 
@@ -95,7 +102,8 @@ src/core/       Solana wire decode, narration, and risk taxonomy
 src/guard.rs    intent/policy binding and verdict engine
 src/lib.rs      thin ZeroClaw WIT component shim
 tests/          host tests over the same guard path used by WASM
-examples/       deterministic non-broadcastable demo fixture generator
+examples/       synthetic and official-Solana-SDK fixture generators
+fixtures/sdk/   reproducible official SDK transaction vectors + provenance
 wit/v0/         pinned ZeroClaw plugin contract
 showcase/       Telegram config, skill, SOP, threat model, fixtures, and scripts
 manifest.toml   minimal tool capability with config_read only
@@ -103,12 +111,13 @@ manifest.toml   minimal tool capability with config_read only
 
 ## Security claim and limits
 
-The component is offline and deterministic with no RPC, files, wallet, keys,
-signing, or broadcast access. ALLOW means only that statically decoded fields
-match the configured policy and supplied intent. It is not proof of runtime
-behavior: CPI, account state, token ownership, balance deltas, lookup-table
-contents, simulation results, signatures, and blockhash freshness remain out of
-scope.
+The component remains offline and deterministic with no RPC, files, wallet,
+keys, signing, or broadcast access. ALLOW means only that statically decoded
+fields match the configured policy and supplied intent. An optional external
+`rpc-enrich` helper can fetch bounded read-only account/simulation evidence; it
+is explicitly advisory and can never upgrade the Rust verdict. CPI, token
+ownership, balance deltas, lookup-table trust, signatures, and ordinary
+blockhash freshness remain outside the offline ALLOW claim.
 
 ## License
 

@@ -12,6 +12,10 @@ pub fn system_program() -> Pubkey {
     Pubkey::new([0u8; 32])
 }
 
+pub fn recent_blockhashes_sysvar() -> Pubkey {
+    pk("SysvarRecentB1ockHashes11111111111111111111")
+}
+
 pub fn token_program() -> Pubkey {
     pk("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
 }

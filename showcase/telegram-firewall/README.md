@@ -22,6 +22,17 @@ cargo +1.96.0 build --release \
 
 ## 1. Build and stage the plugin
 
+The short path builds the component, installs it with ZeroClaw, audits the
+skill, and installs the `ogige` skill bundle:
+
+~~~sh
+cd /ABS/PATH/TO/ogige
+make install
+~~~
+
+This does not edit config or request secrets. Merge the non-secret fragment in
+step 2 deliberately. The equivalent manual commands are:
+
 ~~~sh
 cd /ABS/PATH/TO/ogige
 rustup target add wasm32-wasip2
@@ -67,6 +78,8 @@ Set secrets through masked prompts:
 
 Do not add sop_approve to the agent's tools. The configured
 out_of_band_required mode ensures the model cannot clear its own checkpoint.
+For an offline durable-nonce profile, set `require_durable_nonce=true`, populate
+both nonce allowlists, and require nonce account/authority/value in each intent.
 
 ## 3. Validate before starting
 
@@ -118,15 +131,41 @@ Expected behavior:
    HOLD;
 3. a fully bound transaction returns ALLOW and opens the durable
    solana-transaction-review SOP;
-4. an external operator clears the `out_of_band_required` checkpoint, after
-   which the agent reports back on Telegram that the proposal is unchanged and
-   unsigned.
+4. an external operator clears the `out_of_band_required` checkpoint; the
+   bounded bridge checks that exact run, approves it, opens a fresh agent turn,
+   and advances only the approved run:
+
+~~~sh
+showcase/telegram-firewall/bin/ogige-approve RUN_ID
+~~~
+
+The fresh turn reports terminal state to the operator console. The originating
+Telegram conversation can then receive the normal channel follow-up; the
+transaction remains unchanged, unsigned, and unbroadcast.
 
 Inspect the audit trail:
 
 ~~~sh
 $ZEROCLAW sop pending
 $ZEROCLAW sop show solana-transaction-review
+~~~
+
+Optional RPC evidence is deliberately outside the jailed WASM component. It is
+bounded, read-only, size/time limited, and advisory-only—it cannot convert a
+HOLD or REJECT into ALLOW:
+
+~~~sh
+RPC_URL=https://YOUR_SOLANA_RPC \
+  showcase/telegram-firewall/bin/rpc-enrich TRANSACTION_BASE64 NONCE_ACCOUNT
+~~~
+
+Run the full reproducibility gate at any time with `make verify`.
+
+For routine operator use, copy `request.example.json`, fill its exact fields,
+then submit the bounded request through the configured agent:
+
+~~~sh
+make review REQUEST=/ABS/PATH/request.json
 ~~~
 
 ## 5. Demo evidence

@@ -25,11 +25,14 @@ agent-side SOP approval tools.
 | Dangerous authority primitive | Known approvals, ownership/authority changes, upgrades, permanent delegates produce HIGH/CRITICAL | Taxonomy is not exhaustive |
 | Policy typo or omission | Invalid values become CRITICAL; zero caps and empty allowlists deny value movement | Operator can deliberately configure an unsafe cap |
 | Agent self-approval | sop_approve excluded; SOP uses out_of_band_required, durable SQLite, and cancel-on-timeout | Compromise of authorized Telegram/operator identity |
-| Replay/stale bytes | Human sees a durable run tied to exact input | No blockhash freshness or signature verification is performed |
+| Replay/stale bytes | Report carries SHA-256 of exact bytes; optional durable-nonce mode binds advance position, account, signer authority, and nonce value | Nonce account state can change after review; signature verification is not performed |
+| Compromised RPC | RPC helper is separate, read-only, bounded, and marked advisory-only; it cannot upgrade the offline verdict | Enrichment may be stale, censored, or false |
+| Wrong-run approval | Bridge accepts only a strict run ID, verifies it is pending, then scopes the continuation prompt to that run | A compromised local operator principal remains trusted |
 
 ## Explicit non-goals
 
-This T0/T1 firewall does not prove runtime behavior, fetch account state,
-simulate, sign, broadcast, estimate balance deltas, resolve lookup tables, or
-guarantee blockhash freshness. ALLOW means “the decoded static fields match
-this policy and intent,” never “safe to execute.”
+This T0/T1 firewall does not prove runtime behavior, sign, broadcast, estimate
+balance deltas, trust lookup tables, or guarantee ordinary blockhash freshness.
+The optional external helper can fetch account state and simulate, but its
+result is advisory only. ALLOW means “the decoded static fields match this
+policy and intent,” never “safe to execute.”

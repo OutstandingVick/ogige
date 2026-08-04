@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+
+repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/../../.." && pwd)
+cd "$repo_dir"
+cargo fmt --check
+cargo test --locked
+cargo clippy --all-targets --locked -- -D warnings
+cargo build --target wasm32-wasip2 --release --locked
+cargo run --locked --example generate_sdk_fixtures
+git diff --exit-code -- fixtures/sdk
+zeroclaw skills audit showcase/telegram-firewall/skills/solana-transaction-firewall
+echo "Ogige verification passed."

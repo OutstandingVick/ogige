@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+
+repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/../../.." && pwd)
+command -v cargo >/dev/null 2>&1 || { echo "cargo is required" >&2; exit 127; }
+command -v zeroclaw >/dev/null 2>&1 || { echo "zeroclaw is required" >&2; exit 127; }
+
+rustup target add wasm32-wasip2
+cargo build --manifest-path "$repo_dir/Cargo.toml" --target wasm32-wasip2 --release
+
+stage=$(mktemp -d "${TMPDIR:-/tmp}/ogige-install.XXXXXX")
+trap 'rm -rf "$stage"' EXIT HUP INT TERM
+cp "$repo_dir/manifest.toml" "$stage/manifest.toml"
+cp "$repo_dir/target/wasm32-wasip2/release/solana_guard.wasm" "$stage/solana_guard.wasm"
+
+zeroclaw plugin install "$stage"
+zeroclaw skills audit "$repo_dir/showcase/telegram-firewall/skills/solana-transaction-firewall"
+zeroclaw skills install --bundle ogige "$repo_dir/showcase/telegram-firewall/skills/solana-transaction-firewall"
+
+echo "Ogige plugin and skill installed. Merge config.fragment.toml, replace placeholders, then restart ZeroClaw."

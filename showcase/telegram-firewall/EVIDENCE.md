@@ -8,6 +8,30 @@ plugins-wasm-cranelift,channel-telegram.
 
 No Telegram or provider secret is recorded here.
 
+## v0.3 production-hardening verification
+
+The post-showcase hardening pass added official modular Solana SDK fixtures,
+durable nonce binding, exact-byte SHA-256 identity, property/differential tests,
+CI, approval/resume and routine-review commands, and advisory RPC enrichment.
+
+~~~text
+./showcase/telegram-firewall/bin/verify
+
+unit tests:                         4 passed
+policy integration tests:         20 passed
+SDK differential/property tests:   7 passed
+clippy -D warnings:              PASS
+wasm32-wasip2 release build:     PASS
+official-SDK fixture drift:      CLEAN
+ZeroClaw skill audit:            PASS
+~~~
+
+The official fixtures are placeholder-signed and non-broadcastable. Their JSON
+records the exact Solana crate versions and generator source. The SDK assurance
+suite independently deserializes the same bytes with `solana-transaction`, then
+compares headers, accounts, blockhashes, and compiled instructions with the
+SDK-less guard decoder.
+
 ## Component host proof
 
 The included ogige_e2e.rs test instantiated the release WASM through

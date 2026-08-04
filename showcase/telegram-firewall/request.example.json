@@ -1,0 +1,13 @@
+{
+  "transaction": "<BASE64_TRANSACTION>",
+  "intent": {
+    "description": "Pay an approved invoice",
+    "expected_recipient": "<FULL_BASE58_RECIPIENT>",
+    "expected_mint": null,
+    "max_lamports": 100000000,
+    "max_token_amount": 0,
+    "expected_nonce_account": null,
+    "expected_nonce_authority": null,
+    "expected_nonce_value": null
+  }
+}

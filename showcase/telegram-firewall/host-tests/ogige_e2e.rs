@@ -16,7 +16,7 @@ const RECIPIENT: &str = "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR";
 fn scope() -> PluginInstanceScope {
     let manifest = PluginManifest {
         name: "solana-guard".into(),
-        version: "0.2.0".into(),
+        version: "0.3.0".into(),
         description: None,
         author: None,
         wasm_path: Some("solana_guard.wasm".into()),

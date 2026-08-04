@@ -13,6 +13,9 @@ changes, unlimited approvals, upgrades, Token-2022 permanent delegates and
 hooks, unknown programs, and unresolved lookup tables.
 
 The output is compact ALLOW/HOLD/REJECT JSON plus a plain-language narration.
+For offline signing, durable nonce transactions additionally bind the advance
+at instruction zero, nonce account, required signer authority, and current
+nonce value. Every report carries a SHA-256 identity for the exact wire bytes.
 Eligible Telegram proposals enter a durable ZeroClaw SOP and park at a human
 checkpoint. The agent cannot self-approve because sop_approve is absent from its
 tool registry and the SOP requires an external CLI/HTTP/dashboard principal.
@@ -29,9 +32,11 @@ Rust report at a waiting_approval checkpoint. The matching REJECT run created
 zero SOP records. See EVIDENCE.md for the exact commands and observed states.
 
 Reproduction includes the pinned ZeroClaw commit and Rust toolchain, component,
-config fragment, Telegram skill, durable SOP, synthetic non-broadcastable
-fixture generator, threat model, injection regression, host-level Cranelift
-test, and a sub-three-minute recording script.
+config fragment, Telegram skill, durable SOP, official-Solana-SDK fixture
+generator and differential/property tests, threat model, injection regression,
+host-level Cranelift test, CI, one-command install/verify/review tooling, a
+strict exact-run approval/resume bridge, optional advisory RPC enrichment, and
+a sub-three-minute recording script.
 
 Repository: https://github.com/OutstandingVick/ogige
 

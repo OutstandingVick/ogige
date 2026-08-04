@@ -1,0 +1,21 @@
+{
+  "name": "official-sdk-durable-nonce-sol-transfer",
+  "provenance": {
+    "generator": "examples/generate_sdk_fixtures.rs",
+    "solana_transaction": "4.2.0",
+    "solana_message": "4.5.0",
+    "solana_system_interface": "3.3.0",
+    "note": "Generated from official modular Solana crates; signatures are placeholders and fixtures are not broadcastable."
+  },
+  "transaction_base64": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAIFAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQECAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGp9UXGSxWjuCKhF9z0peIzwNcMUWyGrNE2AYuqUAAAAUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFAgMDAgQABAQAAAADAgABDAIAAAAA4fUFAAAAAA==",
+  "expected": {
+    "version": "legacy",
+    "instruction_count": 2,
+    "lamports": 100000000,
+    "payer": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+    "recipient": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+    "nonce_account": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+    "nonce_authority": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+    "nonce_value": "LbUiWL3xVV8hTFYBVdbTNrpDo41NKS6o3LHHuDzjfcY"
+  }
+}

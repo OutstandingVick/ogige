@@ -1,5 +1,5 @@
 name = "solana-guard"
-version = "0.2.0"
+version = "0.3.0"
 description = "Policy-bound Solana transaction firewall: verify decoded bytes against user intent and operator limits"
 author = "OutstandingVick"
 wasm_path = "solana_guard.wasm"

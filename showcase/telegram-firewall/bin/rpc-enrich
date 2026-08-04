@@ -1,0 +1,40 @@
+#!/bin/sh
+set -eu
+
+usage() {
+  echo "usage: RPC_URL=https://... rpc-enrich TRANSACTION_BASE64 [NONCE_ACCOUNT]" >&2
+  exit 2
+}
+
+[ "$#" -ge 1 ] && [ "$#" -le 2 ] || usage
+[ -n "${RPC_URL:-}" ] || { echo "RPC_URL is required" >&2; exit 2; }
+command -v curl >/dev/null 2>&1 || { echo "curl is required" >&2; exit 127; }
+command -v jq >/dev/null 2>&1 || { echo "jq is required" >&2; exit 127; }
+
+transaction=$1
+nonce_account=${2:-}
+case "$transaction" in *[!A-Za-z0-9+/=_-]*) echo "invalid base64 transaction" >&2; exit 2;; esac
+if [ -n "$nonce_account" ]; then
+  case "$nonce_account" in *[!1-9A-HJ-NP-Za-km-z]*) echo "invalid nonce account" >&2; exit 2;; esac
+fi
+
+rpc() {
+  curl --silent --show-error --fail-with-body \
+    --connect-timeout 5 --max-time 15 --max-filesize 1048576 \
+    -H 'content-type: application/json' --data "$1" "$RPC_URL"
+}
+
+simulation_request=$(jq -cn --arg tx "$transaction" '{jsonrpc:"2.0",id:"simulation",method:"simulateTransaction",params:[$tx,{encoding:"base64",sigVerify:false,replaceRecentBlockhash:false,commitment:"processed"}]}')
+simulation=$(rpc "$simulation_request")
+
+if [ -n "$nonce_account" ]; then
+  nonce_request=$(jq -cn --arg account "$nonce_account" '{jsonrpc:"2.0",id:"nonce",method:"getAccountInfo",params:[$account,{encoding:"base64",commitment:"confirmed"}]}')
+  nonce=$(rpc "$nonce_request")
+else
+  nonce=null
+fi
+
+# Enrichment is evidence only and can never upgrade the offline guard verdict.
+# The full RPC endpoint (which may contain a credential) is intentionally absent.
+jq -cn --argjson simulation "$simulation" --argjson nonce "$nonce" \
+  '{schema_version:1,advisory_only:true,simulation:$simulation,nonce_account:$nonce}'
