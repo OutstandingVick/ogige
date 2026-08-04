@@ -71,6 +71,17 @@ zeroclaw security status --agent solana_firewall       PASS, no warnings
 ogige_e2e through real Cranelift host                   PASS
 ~~~
 
+Live operator preflight after creating `@ogige_bot`:
+
+~~~text
+zeroclaw plugin list / info                             PASS
+zeroclaw skills audit / list --agent                    PASS
+zeroclaw sop validate / show                            PASS
+zeroclaw security status --agent solana_firewall       PASS, no warnings
+zeroclaw channel doctor                                NOT READY
+                                                        no real-time channel detected
+~~~
+
 The host E2E test loaded the real WASM, read its metadata, returned ALLOW for a
 fully bound 1 SOL fixture, then returned REJECT with SOL_CAP_EXCEEDED for the
 same bytes plus hostile self-approval/broadcast prose under a 0.1 SOL operator
@@ -83,19 +94,21 @@ SOL_CAP_EXCEEDED and the isolated SOP store contained zero runs.
 
 ## What is still required
 
-The Telegram bot `@ogige_bot` now exists, and its token is stored only in the
+The Telegram bot `@ogige_bot` now exists, and its token is stored in the
 operator's local ZeroClaw config through the masked config prompt. The token is
 not in this repository. The working model-provider profile is also configured
 locally and has already driven the validation turns described above.
 
 Remaining operator and submission work:
 
-1. complete the Telegram peer allowlist and make `zeroclaw channel doctor`
-   recognize the live channel;
-2. start the daemon and perform ALLOW/checkpoint, REJECT, and injection flows;
-3. record and trim the video to under three minutes;
-4. add the final video URL to SUBMISSION.md;
-5. post the showcase in the bounty-designated Discord channel.
+1. rotate the Telegram token before the live demo and update the local masked
+   secret;
+2. complete the Telegram peer allowlist, enable the channel, and make
+   `zeroclaw channel doctor` recognize it;
+3. start the daemon and perform ALLOW/checkpoint, REJECT, and injection flows;
+4. record and trim the video to under three minutes;
+5. add the final video URL to SUBMISSION.md;
+6. post the showcase in the bounty-designated Discord channel.
 
 Do not reopen a registry PR during the bounty.
 
