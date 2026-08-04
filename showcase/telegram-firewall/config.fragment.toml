@@ -1,0 +1,79 @@
+# Merge this non-secret fragment into a working ZeroClaw config.
+# Replace every /ABS/PATH and <...> placeholder. Set provider and Telegram
+# credentials through the masked config CLI; never commit those secrets.
+#
+# Verified against ZeroClaw commit:
+# 707e0870df3988ab80a46759c50fae680ca3ccd9
+
+[plugins]
+enabled = true
+plugins_dir = "/ABS/PATH/TO/zeroclaw-plugins"
+auto_discover = true
+
+[[plugins.entries]]
+name = "solana-guard"
+
+[plugins.entries.config]
+# Raw units. This example permits at most 0.1 SOL or 1 token at 6 decimals.
+max_sol_lamports = "100000000"
+max_token_amount = "1000000"
+# Comma-separated full base58 addresses. Token recipients are token accounts.
+allowed_recipients = "<RECIPIENT_ACCOUNT_1>,<RECIPIENT_ACCOUNT_2>"
+allowed_mints = "<MINT_ACCOUNT_1>"
+reject_on_critical = "true"
+hold_on_high = "true"
+hold_on_medium = "true"
+
+[channels.telegram.firewall]
+enabled = true
+mention_only = true
+approval_timeout_secs = 120
+
+[peer_groups.telegram_firewall]
+channel = "telegram.firewall"
+external_peers = ["<YOUR_NUMERIC_TELEGRAM_USER_ID>"]
+
+[risk_profiles.solana_firewall]
+level = "supervised"
+workspace_only = true
+# Deliberately excludes shell, HTTP, filesystem, wallet, signing, broadcasting,
+# delegation, model switching, and sop_approve.
+allowed_tools = ["solana_guard", "sop_execute", "sop_advance", "sop_status"]
+auto_approve = ["solana_guard", "sop_execute", "sop_advance", "sop_status"]
+always_ask = []
+excluded_tools = ["shell", "http_request", "sop_approve", "spawn_subagent", "delegate", "model_switch"]
+
+[runtime_profiles.solana_firewall]
+agentic = true
+max_tool_iterations = 8
+max_actions_per_hour = 60
+max_cost_per_day_cents = 500
+max_tool_result_chars = 12000
+prompt_injection_mode = "full"
+strict_tool_parsing = true
+
+[skill_bundles.ogige]
+directory = "/ABS/PATH/TO/ogige/showcase/telegram-firewall/skills"
+include = ["solana-transaction-firewall"]
+
+[agents.solana_firewall]
+enabled = true
+model_provider = "<EXISTING_PROVIDER_TYPE>.<EXISTING_PROVIDER_ALIAS>"
+risk_profile = "solana_firewall"
+runtime_profile = "solana_firewall"
+channels = ["telegram.firewall"]
+skill_bundles = ["ogige"]
+
+[sop]
+sops_dir = "/ABS/PATH/TO/ogige/showcase/telegram-firewall/sops"
+default_execution_mode = "supervised"
+persist_runs = true
+run_store_backend = "sqlite"
+approval_mode = "out_of_band_required"
+approval_timeout_secs = 120
+approval_timeout_action = "cancel"
+step_scope_enforce = true
+step_schema_enforce = true
+untrusted_payload_max_bytes = 8192
+untrusted_input_guard = "block"
+untrusted_guard_sensitivity = 0.7

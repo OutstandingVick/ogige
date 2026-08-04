@@ -1,6 +1,6 @@
 name = "solana-guard"
 version = "0.1.0"
-description = "Solana transaction safety gate: decode, narrate, and ALLOW/HOLD/REJECT before the agent signs"
+description = "Policy-bound Solana transaction firewall: verify decoded bytes against user intent and operator limits"
 author = "OutstandingVick"
 wasm_path = "solana_guard.wasm"
 capabilities = ["tool"]

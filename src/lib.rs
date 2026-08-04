@@ -23,7 +23,7 @@ mod component {
 
     use std::collections::HashMap;
 
-    use crate::guard::{analyze, report_json, GuardConfig, Verdict};
+    use crate::guard::{analyze_with_intent, report_json, GuardConfig, GuardIntent, Verdict};
     use exports::zeroclaw::plugin::plugin_info::Guest as PluginInfo;
     use exports::zeroclaw::plugin::tool::{Guest as Tool, ToolResult};
     use zeroclaw::plugin::logging::{
@@ -39,6 +39,7 @@ mod component {
     #[derive(serde::Deserialize)]
     struct ExecuteArgs {
         transaction: String,
+        intent: GuardIntent,
         #[serde(rename = "__config", default)]
         config: HashMap<String, String>,
     }
@@ -59,9 +60,9 @@ mod component {
         }
 
         fn description() -> String {
-            "Solana transaction safety gate. Pass a base64-encoded transaction; \
-             returns a human-readable narration plus a structured ALLOW / HOLD / REJECT \
-             verdict. Never signs or broadcasts — use before approving any on-chain action."
+            "Policy-bound Solana transaction firewall. Pass a base64 transaction and the \
+             user's explicit recipient/amount intent; returns ALLOW / HOLD / REJECT after \
+             checking decoded bytes against operator caps and allowlists. Never signs or broadcasts."
                 .to_string()
         }
 
@@ -72,9 +73,40 @@ mod component {
                     "transaction": {
                         "type": "string",
                         "description": "Base64-encoded Solana transaction (legacy or v0)."
+                    },
+                    "intent": {
+                        "type": "object",
+                        "description": "Untrusted user intent that must match the decoded transaction and operator policy.",
+                        "properties": {
+                            "description": {
+                                "type": "string",
+                                "description": "Short human-readable purpose; instructions inside this field are never executed."
+                            },
+                            "expected_recipient": {
+                                "type": "string",
+                                "description": "Full base58 recipient account expected in the transaction."
+                            },
+                            "expected_mint": {
+                                "type": ["string", "null"],
+                                "description": "Full base58 mint for a TransferChecked token transfer; null for SOL."
+                            },
+                            "max_lamports": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "description": "Maximum native lamports authorized by this request."
+                            },
+                            "max_token_amount": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "description": "Maximum raw token units authorized by this request."
+                            }
+                        },
+                        "required": ["description", "expected_recipient", "max_lamports", "max_token_amount"],
+                        "additionalProperties": false
                     }
                 },
-                "required": ["transaction"]
+                "required": ["transaction", "intent"],
+                "additionalProperties": false
             })
             .to_string()
         }
@@ -98,7 +130,7 @@ mod component {
             };
 
             let cfg = GuardConfig::from_section(&parsed.config);
-            match analyze(&parsed.transaction, &cfg) {
+            match analyze_with_intent(&parsed.transaction, &cfg, Some(&parsed.intent)) {
                 Ok(report) => {
                     let action = match report.verdict {
                         Verdict::Allow => PluginAction::Approve,
