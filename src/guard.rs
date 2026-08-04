@@ -253,7 +253,7 @@ pub fn analyze_with_intent(
         }
     }
 
-    findings.sort_by(|a, b| b.severity.cmp(&a.severity));
+    findings.sort_by_key(|finding| std::cmp::Reverse(finding.severity));
     let verdict = verdict_from_findings(&findings, cfg);
     let summary = summary_line(verdict, &findings);
 
