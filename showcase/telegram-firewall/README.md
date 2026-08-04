@@ -15,7 +15,9 @@ include the WASM execution backend, so build the host from source:
 git clone https://github.com/zeroclaw-labs/zeroclaw.git
 cd zeroclaw
 git checkout 707e0870df3988ab80a46759c50fae680ca3ccd9
-cargo build --release --features plugins-wasm-cranelift,channel-telegram
+rustup toolchain install 1.96.0 --profile minimal
+cargo +1.96.0 build --release \
+  --features plugins-wasm-cranelift,channel-telegram
 ~~~
 
 ## 1. Build and stage the plugin
@@ -57,18 +59,33 @@ out_of_band_required mode ensures the model cannot clear its own checkpoint.
 
 ~~~sh
 ZEROCLAW=/ABS/PATH/TO/zeroclaw/target/release/zeroclaw
-$ZEROCLAW config check
+$ZEROCLAW config list --filter plugins
 $ZEROCLAW plugin list
 $ZEROCLAW skills audit \
   /ABS/PATH/TO/ogige/showcase/telegram-firewall/skills/solana-transaction-firewall
 $ZEROCLAW skills list --agent solana_firewall
 $ZEROCLAW sop validate solana-transaction-review
+$ZEROCLAW sop show solana-transaction-review
 $ZEROCLAW channel doctor
+$ZEROCLAW security status --agent solana_firewall
 ~~~
 
-If the exact CLI build uses config validate rather than config check, run
-zeroclaw config --help and select its read-only validation command. Do not start
-the daemon until the plugin, skill, SOP, channel, and agent all resolve.
+Every command loads and validates the config before acting. Do not start the
+daemon until the plugin, skill, SOP, channel, and agent all resolve.
+
+For the same component-level proof used during development, copy the included
+host test into the pinned ZeroClaw checkout and run it:
+
+~~~sh
+cp showcase/telegram-firewall/host-tests/ogige_e2e.rs \
+  /ABS/PATH/TO/zeroclaw/crates/zeroclaw-plugins/tests/ogige_e2e.rs
+cd /ABS/PATH/TO/zeroclaw
+cargo +1.96.0 test -p zeroclaw-plugins \
+  --features plugins-wasm-cranelift --test ogige_e2e -- --nocapture
+~~~
+
+Adjust the WASM absolute path constant in the copied test if the ogige checkout
+is elsewhere.
 
 ## 4. Run the real channel
 
@@ -95,7 +112,7 @@ Inspect the audit trail:
 
 ~~~sh
 $ZEROCLAW sop pending
-$ZEROCLAW sop status solana-transaction-review
+$ZEROCLAW sop show solana-transaction-review
 ~~~
 
 ## 5. Demo evidence

@@ -2,7 +2,7 @@
 # Replace every /ABS/PATH and <...> placeholder. Set provider and Telegram
 # credentials through the masked config CLI; never commit those secrets.
 #
-# Verified against ZeroClaw commit:
+# Add schema_version = 3 at the top of a new config. Verified against:
 # 707e0870df3988ab80a46759c50fae680ca3ccd9
 
 [plugins]
