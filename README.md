@@ -1,123 +1,80 @@
-# ogige — policy-bound Solana approval firewall
+# Ogige
 
-Ogige is a real ZeroClaw agent workflow for reviewing unsigned Solana
-transactions over Telegram. A jailed Rust/WASM tool decodes the transaction,
-checks it against explicit user intent and operator-owned caps/allowlists, and
-returns ALLOW, HOLD, or REJECT before a durable human approval checkpoint.
+**Policy-bound Solana transaction approval firewall for ZeroClaw agents.**
 
-It never signs or broadcasts. This is deliberately a T0/T1 safety workflow, not
-a wallet.
+Ogige reviews **unsigned** Solana transactions against explicit user intent and operator-owned limits, then parks eligible proposals at a durable **human checkpoint**. It never signs or broadcasts.
 
-Built for the Superteam Brasil × ZeroClaw bounty. The complete showcase is in
-[showcase/telegram-firewall](showcase/telegram-firewall/README.md).
+[Documentation](docs/index.md) · [Getting started](docs/getting-started.md) · [Security model](docs/security.md) · [API reference](docs/api-reference.md)
 
-## What makes the verdict policy-bound
+---
 
-A value transfer is eligible only when all three views agree:
+## Why it exists
 
-1. the recipient, mint, and raw amount decoded from the transaction bytes;
-2. the user's explicit expected recipient/mint and per-request maximum;
-3. the operator's jailed recipient/mint allowlists and absolute caps.
+Agents that can touch Solana need a brake pedal. Ogige is that brake:
 
-Missing intent, zero/empty policy, malformed config, a mismatch, or an exceeded
-cap fails closed. Plain SPL Transfer is held because it does not carry a mint;
-TransferChecked can be fully bound offline.
+1. Decode the exact wire bytes (legacy or v0) inside a jailed WASM tool  
+2. Bind recipient / mint / amount to **user intent** and **operator policy**  
+3. Return `ALLOW` / `HOLD` / `REJECT` with narration and findings  
+4. On ALLOW, open an out-of-band human SOP — the agent cannot self-approve  
 
-The tool input is:
+```text
+Telegram → ZeroClaw agent → solana_guard (WASM) → verdict
+                              │
+                    ALLOW ────┼──► durable human checkpoint
+                    HOLD  ────┼──► incomplete offline proof
+                    REJECT ───┴──► stop (no checkpoint)
+```
 
-~~~json
-{
-  "transaction": "<base64 legacy-or-v0 transaction>",
-  "intent": {
-    "description": "Pay an approved invoice",
-    "expected_recipient": "<full base58 account>",
-    "expected_mint": null,
-    "max_lamports": 100000000,
-    "max_token_amount": 0,
-    "expected_nonce_account": null,
-    "expected_nonce_authority": null,
-    "expected_nonce_value": null
-  }
-}
-~~~
+## Quick start
 
-The compact JSON output includes the verdict, narration, findings,
-intent_bound, policy_configured, durable-nonce binding state, a SHA-256 identity
-for the exact serialized bytes, transaction version, and structural counts.
-
-## Operator policy
-
-The host injects only this plugin's flat config through its sole config_read
-permission:
-
-| Key | Safe default | Meaning |
-|---|---:|---|
-| max_sol_lamports | 0 | Absolute native-transfer cap; zero denies SOL movement |
-| max_token_amount | 0 | Absolute raw token-unit cap; zero denies token movement |
-| allowed_recipients | empty | Comma-separated full base58 destination accounts |
-| allowed_mints | empty | Comma-separated full base58 checked-transfer mints |
-| require_durable_nonce | false | Require a valid advance instruction at index 0 |
-| allowed_nonce_accounts | empty | Operator-approved durable nonce accounts |
-| allowed_nonce_authorities | empty | Operator-approved nonce signer authorities |
-| reject_on_critical | true | Critical finding produces REJECT |
-| hold_on_high | true | High finding produces HOLD |
-| hold_on_medium | false | Optionally require review for medium findings |
-
-Invalid integers or pubkeys produce POLICY_CONFIG_INVALID at CRITICAL severity.
-
-## Safety signals
-
-In addition to policy violations, the analyzer detects:
-
-- System Assign/AssignWithSeed and durable nonce authority changes;
-- misplaced/multiple nonce advances and nonce account/authority/value mismatch;
-- unlimited or ordinary token delegate approvals;
-- mint, freeze, token-owner, and program-upgrade authority changes;
-- BPF program upgrades;
-- Token-2022 permanent delegates, transfer hooks, and non-transferable mints;
-- token mint, burn, freeze, thaw, and close operations;
-- unknown programs and unresolved v0 address-lookup tables.
-
-Unknown programs, lookup tables, and unresolved token mints default to HOLD.
-Malformed, non-canonical, truncated, structurally inconsistent, or trailing
-transaction bytes fail decoding.
-
-## Build and verify
-
-~~~sh
+```sh
+git clone https://github.com/OutstandingVick/ogige.git
+cd ogige
 rustup target add wasm32-wasip2
-make verify
-~~~
+make verify    # tests, clippy, WASM build, fixture checks
+make install   # stage plugin + skill (does not write secrets)
+```
 
-Current local suite includes unit/integration policy tests, official-Solana-SDK
-differential fixtures, and property tests over arbitrary/trailing wire bytes.
-CI reproduces the fixtures, runs clippy, and builds the WASM component. The
-component has also passed the included end-to-end test through ZeroClaw 0.8.4's
-real Wasmtime/Cranelift host.
+Then merge [`showcase/telegram-firewall/config.fragment.toml`](showcase/telegram-firewall/config.fragment.toml) into your ZeroClaw config, set the Telegram bot token via masked prompts, and follow the [Getting started](docs/getting-started.md) guide.
+
+## Product docs
+
+| Guide | Description |
+|---|---|
+| [Overview](docs/overview.md) | Product model and loop |
+| [Architecture](docs/architecture.md) | WASM guard, skill, SOP, bridges |
+| [Security](docs/security.md) | Trust boundary and non-goals |
+| [Configuration](docs/configuration.md) | Caps, allowlists, nonce mode |
+| [API reference](docs/api-reference.md) | Request / response schema |
+| [Getting started](docs/getting-started.md) | Install and first run |
+| [Operator guide](docs/operator-guide.md) | Approve, review, RPC enrich |
+| [Telegram agent](docs/telegram-agent.md) | Channel behavior |
+| [Verification](docs/verification.md) | Repro and evidence |
+
+## Safety claim (short)
+
+- Permission surface: **`config_read` only**  
+- Custody: **T0/T1** — no keys, no signing, no broadcast  
+- Fail-closed defaults: zero caps and empty allowlists deny value movement  
+- Prompt injection cannot change the Rust verdict  
+- Optional RPC enrichment is **advisory only** and lives outside the jail  
+
+Full detail: [Security model](docs/security.md).
 
 ## Repository layout
 
-~~~text
-src/core/       Solana wire decode, narration, and risk taxonomy
-src/guard.rs    intent/policy binding and verdict engine
-src/lib.rs      thin ZeroClaw WIT component shim
-tests/          host tests over the same guard path used by WASM
-examples/       synthetic and official-Solana-SDK fixture generators
-fixtures/sdk/   reproducible official SDK transaction vectors + provenance
-wit/v0/         pinned ZeroClaw plugin contract
-showcase/       Telegram config, skill, SOP, threat model, fixtures, and scripts
-manifest.toml   minimal tool capability with config_read only
-~~~
-
-## Security claim and limits
-
-The component remains offline and deterministic with no RPC, files, wallet,
-keys, signing, or broadcast access. ALLOW means only that statically decoded
-fields match the configured policy and supplied intent. An optional external
-`rpc-enrich` helper can fetch bounded read-only account/simulation evidence; it
-is explicitly advisory and can never upgrade the Rust verdict. CPI, token
-ownership, balance deltas, lookup-table trust, signatures, and ordinary
-blockhash freshness remain outside the offline ALLOW claim.
+```text
+docs/                 Product documentation (start here)
+src/                  WASM tool: decode, narrate, policy verdict
+tests/                Host-run tests over the same guard path
+fixtures/sdk/         Official Solana SDK differential vectors
+showcase/telegram-firewall/
+  skills/             Agent skill bundle
+  sops/               Durable human-checkpoint workflow
+  bin/                install · verify · approve · review · rpc-enrich
+  config.fragment.toml
+manifest.toml         Minimal tool capability
+```
 
 ## License
 

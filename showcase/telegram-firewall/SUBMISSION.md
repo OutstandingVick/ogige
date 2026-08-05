@@ -2,6 +2,9 @@
 
 ## Telegram Solana transaction approval firewall
 
+**Product:** https://github.com/OutstandingVick/ogige  
+**Documentation:** https://github.com/OutstandingVick/ogige/blob/main/docs/index.md
+
 Ogige turns a real ZeroClaw Telegram agent into a policy-bound review desk for
 unsigned Solana transactions.
 
@@ -38,8 +41,8 @@ host-level Cranelift test, CI, one-command install/verify/review tooling, a
 strict exact-run approval/resume bridge, optional advisory RPC enrichment, and
 a sub-three-minute recording script.
 
-Repository: https://github.com/OutstandingVick/ogige
-
+Repository / product link: https://github.com/OutstandingVick/ogige  
+Docs: https://github.com/OutstandingVick/ogige/blob/main/docs/index.md  
 Demo video: <ADD FINAL VIDEO URL>
 
 ## Evidence checklist before posting

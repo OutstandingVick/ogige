@@ -1,5 +1,9 @@
 # Threat model
 
+> Canonical product documentation: **[docs/security.md](../../docs/security.md)**.  
+> This file is retained as a showcase-pack mirror for operators working inside
+> `showcase/telegram-firewall/`.
+
 ## Asset and trust boundary
 
 The asset is the operator's approval decision over unsigned Solana transaction
