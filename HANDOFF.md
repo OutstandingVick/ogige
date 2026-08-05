@@ -128,14 +128,15 @@ Do not reopen a registry PR during the bounty.
 
 ## Key files
 
-- README.md — project overview and safety claim
-- showcase/telegram-firewall/README.md — exact operator runbook
+- docs/index.md — product documentation home
+- README.md — product landing page
+- showcase/telegram-firewall/README.md — runnable showcase pack index
 - showcase/telegram-firewall/config.fragment.toml — non-secret config
 - showcase/telegram-firewall/skills/.../SKILL.md — agent behavior
 - showcase/telegram-firewall/sops/... — durable workflow
-- showcase/telegram-firewall/THREAT_MODEL.md — security boundary
+- docs/security.md — security boundary (canonical)
 - showcase/telegram-firewall/PROMPT_INJECTION_TEST.md — adversarial case
 - showcase/telegram-firewall/EVIDENCE.md — real host and agent-loop evidence
 - showcase/telegram-firewall/host-tests/ogige_e2e.rs — real host proof
-- showcase/telegram-firewall/SUBMISSION.md — Discord post draft
+- showcase/telegram-firewall/SUBMISSION.md — Discord / Earn post draft
 - showcase/telegram-firewall/VIDEO_SCRIPT.md — recording plan

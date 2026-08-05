@@ -23,25 +23,25 @@ Invalid integers or pubkeys produce `POLICY_CONFIG_INVALID` at CRITICAL severity
 
 ## Example fragment
 
-Merge the non-secret fragment from the showcase into your ZeroClaw config after replacing placeholders and absolute paths:
+Merge the non-secret fragment from the showcase into your ZeroClaw config after replacing placeholders and absolute paths. Plugin policy lives under the plugin entry config:
 
 ```toml
-# See showcase/telegram-firewall/config.fragment.toml for the full template.
-# Conceptual excerpt:
+[[plugins.entries]]
+name = "solana-guard"
 
-[plugins.solana-guard]
-# Host resolves this plugin's section and injects it as __config.
-max_sol_lamports = "1000000000"
-max_token_amount = "0"
-allowed_recipients = "RecipientPubkey1111111111111111111111111111111"
-allowed_mints = ""
+[plugins.entries.config]
+max_sol_lamports = "100000000"
+max_token_amount = "1000000"
+allowed_recipients = "<RECIPIENT_ACCOUNT_1>,<RECIPIENT_ACCOUNT_2>"
+allowed_mints = "<MINT_ACCOUNT_1>"
 require_durable_nonce = "false"
 reject_on_critical = "true"
 hold_on_high = "true"
-hold_on_medium = "false"
+hold_on_medium = "true"
 ```
 
-Exact table names and path keys follow ZeroClaw’s config schema — use [`config.fragment.toml`](../showcase/telegram-firewall/config.fragment.toml) as the source of truth for mergeable fields.
+Full mergeable template (channels, risk profile, skill bundle, SOP paths):  
+[`showcase/telegram-firewall/config.fragment.toml`](../showcase/telegram-firewall/config.fragment.toml)
 
 ## Secrets
 
